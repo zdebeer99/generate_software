@@ -2,14 +2,26 @@ Software Generator
 
 This project is a simple code guide to quickly generate code using python and jinja. The combination allows full flexibility with a very simple setup.
 
+## Quick use
+
+Clone the report
+
+Requires Python 3
+
+pip install jinja2-stringcase
+pip install openpyxl
+pip install Jinja2
+
 ## Variable structure available for templates 
 
-**Tables**
+The meta data can be set in excel or a csv file. By default the there is a tables sheet and a fields sheet.
+
+**Tables Sheet**
 
 * name
 * description
 
-**Fields**
+**Fields Sheet**
 
 * table  - Table Name
 * name - Field Name
@@ -19,11 +31,46 @@ This project is a simple code guide to quickly generate code using python and ji
 * key - bool true/false
 * elmtype - type in client app
 
-## Exanmple of Usage
+## Example of Usage
 
-Generate a file per table;
+See examples
 
+## Build in functions and filters
 
+**list_fmt**
+
+Format each string item in a list.
+
+**Case filters**
+
+Use as a filter for example {{"hello_world"|pascalcase}}
+
+https://github.com/ufranske/jinja2_stringcase
+
+* camelcase 
+* capitalcase 
+* constcase 
+* lowercase 
+* pascalcase 
+* pathcase 
+* sentencecase 
+* snakecase 
+* spinalcase 
+* titlecase 
+* trimcase 
+* uppercase 
+* alphanumcase 
+
+**Custom functions**
+
+Custom functions can be added using the following code.
+
+```python
+
+meta = gencode.load_from_xlsx('metadata.xlsx')
+meta.jinja2.globals["custom_function"] = custom_function
+
+```
 
 ## Resources
 
@@ -62,7 +109,3 @@ with open('employee_birthday.txt') as csv_file:
 
 ```
 
-## Python Dependencies
-
-pip install openpyxl
-pip install Jinja2
