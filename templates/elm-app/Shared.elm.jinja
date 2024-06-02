@@ -1,80 +1,79 @@
 module Shared exposing (
-    Config
-    , baseUrl
-    , Indicator(..)
-    , isBusy
-    , isLoading
-    , setBusy
-    , setIndicatorOff
-    , setLoading
-    , defaultJwt
-    )
+Config
+, baseUrl
+, Indicator(..)
+, isBusy
+, isLoading
+, setBusy
+, setIndicatorOff
+, setLoading
+, defaultJwt
+)
 
 {-|
 File Generated {{today}}
 -}
 
 import Browser.Navigation as Nav
-import Consol.User exposing (UserInfo)
 import Postgrest.Client as P exposing (JWT)
 import Time exposing (Posix)
 
 
 type alias Config =
-    { date : Posix
-    , key : Nav.Key
-    , jwt : JWT
-    }
+{ date : Posix
+, key : Nav.Key
+, jwt : JWT
+}
 
 defaultJwt : P.JWT
 defaultJwt =
-    P.jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoid2ViX3VzZXIifQ.AlfdOoyuypYkbZ4XjWnZyMUVRVmGSFED5M5OZEZ_vV4"
+P.jwt "some key"
 
 
 {-
 -- Config for user login
 type alias Config =
-    { date : Posix
-    , key : Nav.Key
-    , jwt : JWT
-    , user : UserInfo
-    }
+{ date : Posix
+, key : Nav.Key
+, jwt : JWT
+, user : UserInfo
+}
 -}
 
 baseUrl : String
 baseUrl =
-    "{{app.baseUrl}}"
+"{{app.baseUrl}}"
 
 
 -- Indicator
 
 
 type Indicator
-    = IndicatorOff
-    | Busy
-    | Loading
+= IndicatorOff
+| Busy
+| Loading
 
 
 setBusy : { a | indicator : Indicator } -> { a | indicator : Indicator }
 setBusy model =
-    { model | indicator = Busy }
+{ model | indicator = Busy }
 
 
 setLoading : { a | indicator : Indicator } -> { a | indicator : Indicator }
 setLoading model =
-    { model | indicator = Loading }
+{ model | indicator = Loading }
 
 
 setIndicatorOff : { a | indicator : Indicator } -> { a | indicator : Indicator }
 setIndicatorOff model =
-    { model | indicator = IndicatorOff }
+{ model | indicator = IndicatorOff }
 
 
 isBusy : { a | indicator : Indicator } -> Bool
 isBusy model =
-    model.indicator == Busy
+model.indicator == Busy
 
 
 isLoading : { a | indicator : Indicator } -> Bool
 isLoading model =
-    model.indicator == Loading
+model.indicator == Loading
