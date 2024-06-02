@@ -1,11 +1,10 @@
 from jinja2 import Environment, FileSystemLoader
-import jinja2_stringcase
-import stringcase
 import csv
 import openpyxl
 from gencode.internal import default
 import gencode.text_helpers as text_helpers
 import os
+import datetime
 
 # Config Loading
 
@@ -30,6 +29,11 @@ class SourceConfig:
         env = Environment(loader=file_loader, extensions=[
             'jinja2_stringcase.StringCaseExtension'])
         env.globals["list_fmt"] = text_helpers.list_format
+        env.globals["today"] = datetime.date.today()
+        env.globals["pg_table_definition"] = text_helpers.pg_table_definition
+        env.globals["pg_type"] = text_helpers.pg_type
+        env.globals["elm_to_string"] = text_helpers.elm_to_string
+        env.globals["elm_to_default_value"] = text_helpers.elm_to_default_value
         self.jinja2 = env
 
     def get_template(self, name: str):
@@ -63,11 +67,6 @@ class Field:
         self.key = key
         self.allownull = allownull
         self.elm_type = elm_type
-        self.elm_type_func = stringcase.camelcase(elm_type)
-        self.elm_name = stringcase.camelcase(name)
-        self.elm_pascal = stringcase.pascalcase(name)
-        self.elm_title = stringcase.titlecase(name)
-        self.table_pascal_case = stringcase.pascalcase(table)
 
 
 def load_from_xlsx(filename: str) -> SourceConfig:

@@ -1,0 +1,179 @@
+{#
+This template generates the Types.elm, Update.elm and View.elm in one file.
+#}
+module Page.{{table|pascalcase}}.Update exposing (update, init)
+
+import Shared exposing (Config, Indicator(..), isBusy, isLoading, setBusy, setIndicatorOff, setLoading)
+import UIBootstrtap.Edit as Edit
+import Util.Http exposing (httpErrorToText)
+import Postgrest.Client as P
+import UIBootstrtap.Notification as Notification
+import Model.{{table|pascalcase}} as Model exposing ({{table|pascalcase}})
+import Page.{{table|pascalcase}}.Types as ViewModel exposing (EditAction(..), Model, ModelEdit(..), Msg(..), MsgEdit(..), ModelEditForm)
+
+--# Update
+
+update : Config -> Msg -> Model -> ( Model, Cmd Msg )
+update cfg msg model =
+    case msg of
+        NoAction ->
+            ( model, Cmd.none )
+
+        {{table|pascalcase}}Result (Ok data) ->
+            ( ViewModel.setData data model |> setIndicatorOff, Cmd.none )
+
+        DialogClose ->
+            ( ViewModel.closeDialog model, Cmd.none )
+
+        MsgEdit msg_ ->
+            case model.edit of
+                NotEditing ->
+                    ( model, Cmd.none )
+
+                EditNewItem editItem ->
+                    updateEdit cfg msg_ editItem model
+
+                EditUpdateItem editItem ->
+                    updateEdit cfg msg_ editItem model
+
+        ActionOpenItem item ->
+            ( ViewModel.setEdit{{table|pascalcase}} (ViewModel.createModel item) model, Cmd.none )
+
+        CreateItem ->
+            ( ViewModel.setNew{{table|pascalcase}} (ViewModel.createModel (Model.default)) model, Cmd.none )
+
+        DeleteItem {{ list_fmt(keys, '{0.elm_name}_')|join(' ') }} ->
+            ( setBusy model, Model.rpcDelete cfg.jwt DeleteItemResult {{ list_fmt(keys, '{0.elm_name}_')|join(' ') }} )
+
+        CancelItem item ->
+            ( ViewModel.setEditDone model, Cmd.none )
+
+        UpdateItem item ->
+            ( setBusy model, Model.rpcUpdate cfg.jwt UpdateItemResult item )
+
+        CreateItemResult (Ok item1) ->
+            ( ViewModel.addItem item1 model
+                |> ViewModel.setEditDone
+                |> setIndicatorOff
+            , Cmd.none
+            )
+
+        DeleteItemResult (Ok ({{ list_fmt(keys, '{0.elm_name}_')|join(', ') }})) ->
+            ( ViewModel.setEditDone model
+                |> ViewModel.deleteItem {{ list_fmt(keys, '{0.elm_name}_')|join(' ') }}
+                |> setIndicatorOff
+            , Cmd.none
+            )
+
+        UpdateItemResult (Ok item1) ->
+            ( ViewModel.setEditDone model
+                |> ViewModel.updateItem item1
+                |> setIndicatorOff
+            , Cmd.none
+            )
+
+        {{table|pascalcase}}Result (Err err1) ->
+            networkE "Load Failed" err1 model
+
+        CreateItemResult (Err err1) ->
+            networkE "Create Failed" err1 model
+
+        DeleteItemResult (Err err1) ->
+            networkE "Delete Failed" err1 model
+
+        UpdateItemResult (Err err1) ->
+            networkE "Update Failed" err1 model
+
+
+init : Config -> ( Model, Cmd Msg )
+init cfg =
+    ( ViewModel.default |> setLoading
+    , Model.rpcList cfg.jwt {{table|pascalcase}}Result 0
+    )
+
+
+-- update functions
+
+
+updateEdit : Config -> MsgEdit -> ModelEdit -> Model -> ( Model, Cmd Msg )
+updateEdit cfg msg editModel model =
+    case updateEditForm msg editModel of
+        Active model_ ->
+            case model.edit of
+                NotEditing ->
+                    ( ViewModel.setEdit{{table|pascalcase}} (Active model_) model, Cmd.none )
+
+                EditNewItem editItem ->
+                    ( ViewModel.setNew{{table|pascalcase}} (Active model_) model, Cmd.none )
+
+                EditUpdateItem editItem ->
+                    ( ViewModel.setEdit{{table|pascalcase}} (Active model_) model, Cmd.none )
+
+
+        Cancelled ->
+            ( ViewModel.setEditDone model, Cmd.none )
+
+        Confirmed model_ ->
+            case model.edit of
+                NotEditing ->
+                    ( ViewModel.setEditDone model, Cmd.none )
+
+                EditNewItem editItem ->
+                  ( { model | edit = ViewModel.EditNewItem (Confirmed model_) }
+                      |> setLoading
+                  , Model.rpcCreate cfg.jwt CreateItemResult model_ )
+
+                EditUpdateItem editItem ->
+                    ( { model | edit = ViewModel.EditUpdateItem (Confirmed model_) }
+                        |> setLoading
+                    , Model.rpcUpdate cfg.jwt UpdateItemResult model_ )
+
+
+
+--# Update Edit
+
+updateEditForm : MsgEdit -> ModelEdit -> ModelEdit
+updateEditForm msg model =
+    case model of
+        Active model_ ->
+            updateEditForm_ msg model_
+
+        Cancelled ->
+            Cancelled
+
+        Confirmed model_ ->
+            Confirmed model_
+
+
+updateEditForm_ : MsgEdit -> ModelEditForm -> ModelEdit
+updateEditForm_ msg model =
+    case msg of
+        Cancel ->
+            Cancelled
+
+        Confirm ->
+             Confirmed (ViewModel.get{{table|pascalcase}} model)
+
+        {% for field in no_keys%}
+        Update{{field.elm_pascal}} msg_ ->
+            Active { model | {{field.elm_name}} = Edit.update msg_ model.{{field.elm_name}} }
+        {% endfor %}
+
+
+--# Model Helpers
+
+
+networkE : String -> P.Error -> Model -> ( Model, Cmd Msg )
+networkE title1 err1 model =
+    ( model
+        |> notificationE title1 (httpErrorToText (P.toHttpError err1))
+        |> setIndicatorOff
+    , Cmd.none
+    )
+
+
+notificationE : String -> String -> Model -> Model
+notificationE title1 message1 model =
+    { model | dialog = Notification.message DialogClose title1 message1 }
+
+

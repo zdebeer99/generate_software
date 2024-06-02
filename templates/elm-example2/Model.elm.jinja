@@ -1,5 +1,5 @@
-module Model.{{table|pascalcase}} exposing
-    ( {{table|pascalcase}}
+module Model.{{model}} exposing
+    ( {{model}}
     , rpcCreate
     , rpcDelete
     , rpcGet
@@ -9,13 +9,13 @@ module Model.{{table|pascalcase}} exposing
 
 {- Generated file for use with postgrest sql api functions.
 
-# Model for sql table {{table}}
+# Model for sql table {{table.name}}
 
-{{table_meta.description}}
+{{table.description}}
 
 ## type
 
-@docs {{table|pascalcase}}
+@docs {{model}}
 
 ## api calls
 
@@ -32,7 +32,7 @@ import Time exposing (Posix)
 import Util.Date exposing (decodePosix, encodePosix)
 
 
-type alias {{table|pascalcase}} =
+type alias {{model}} =
     { {{ list_fmt(fields, "{0.elm_name} : {0.elm_type}")|join('\n    , ') }}
     }
 
@@ -41,7 +41,7 @@ type alias {{table|pascalcase}} =
 
 {-| rpcList jwt result aPage
 
-Return a list of rows from table {{table}}.
+Return a list of rows from table {{table.name}}.
 
 Arguments;
 
@@ -53,9 +53,9 @@ Example:
     rpcList jwt TableResult 0
 
 -}
-rpcList : P.JWT -> (Result P.Error (List {{table|pascalcase}}) -> msg) -> Int -> Cmd msg
+rpcList : P.JWT -> (Result P.Error (List {{model}}) -> msg) -> Int -> Cmd msg
 rpcList jwt result aPage =
-    S.pgGet jwt "{{table}}_list" result decode{{table|pascalcase}}View [ ( "page", P.int aPage ) ]
+    S.pgGet jwt "{{table.name}}_list" result decode{{model}}View [ ( "page", P.int aPage ) ]
 
 
 {-| rpcGet jwt result {{list_fmt(keys, "a{0.elm_pascal}")|join(' ') }}
@@ -72,29 +72,29 @@ Example:
     rpcGet jwt RowResult 1
 
 -}
-rpcGet : P.JWT -> (Result P.Error {{table|pascalcase}} -> msg) -> {{list_fmt(keys, "{0.elm_type}")|join(' -> ') }} -> Cmd msg
+rpcGet : P.JWT -> (Result P.Error {{model}} -> msg) -> {{list_fmt(keys, "{0.elm_type}")|join(' -> ') }} -> Cmd msg
 rpcGet jwt result {{list_fmt(keys, "a{0.elm_pascal}")|join(' ') }} =
-    S.pgGetOne jwt "{{table}}_get" result decode{{table|pascalcase}}View [ {{list_fmt(keys, '( "{0.name}", P.{0.elm_type_func} a{0.elm_pascal})')|join('\n    , ') }} ]
+    S.pgGetOne jwt "{{table.name}}_get" result decode{{model}}View [ {{list_fmt(keys, '( "{0.name}", P.{0.elm_type_func} a{0.elm_pascal})')|join('\n    , ') }} ]
 
 
-{-| rpcUpdate jwt result a{{table|pascalcase}}
+{-| rpcUpdate jwt result a{{model}}
 
 Update a single record
 
 -}
-rpcUpdate : P.JWT -> (Result P.Error {{table|pascalcase}} -> msg) -> {{table|pascalcase}} -> Cmd msg
-rpcUpdate jwt result a{{table|pascalcase}} =
-    S.pgPostOne jwt "{{table}}_update" result decode{{table|pascalcase}}View (encode{{table|pascalcase}}View a{{table|pascalcase}})
+rpcUpdate : P.JWT -> (Result P.Error {{model}} -> msg) -> {{model}} -> Cmd msg
+rpcUpdate jwt result a{{model}} =
+    S.pgPostOne jwt "{{table.name}}_update" result decode{{model}}View (encode{{model}}View a{{model}})
 
 
-{-| rpcCreate jwt result a{{table|pascalcase}}
+{-| rpcCreate jwt result a{{model}}
 
 Create a new record
 
 -}
-rpcCreate : P.JWT -> (Result P.Error {{table|pascalcase}} -> msg) -> {{table|pascalcase}} -> Cmd msg
-rpcCreate jwt result a{{table|pascalcase}} =
-    S.pgPostOne jwt "{{table}}_create" result decode{{table|pascalcase}}View (encode{{table|pascalcase}}View a{{table|pascalcase}})
+rpcCreate : P.JWT -> (Result P.Error {{model}} -> msg) -> {{model}} -> Cmd msg
+rpcCreate jwt result a{{model}} =
+    S.pgPostOne jwt "{{table.name}}_create" result decode{{model}}View (encode{{model}}View a{{model}})
 
 
 {-| rpcDelete jwt result {{list_fmt(keys, "a{0.elm_pascal}")|join(' ') }}
@@ -104,19 +104,19 @@ Delete a record
 -}
 rpcDelete : P.JWT -> (Result P.Error Int -> msg) -> {{list_fmt(keys, "{0.elm_type}")|join(' -> ') }} -> Cmd msg
 rpcDelete jwt result {{list_fmt(keys, "a{0.elm_pascal}")|join(' ') }} =
-    S.pgPostOne jwt "{{table}}_delete" result D.int (E.object [ {{list_fmt(keys, '( "{0.name}", E.{0.elm_type_func} a{0.elm_pascal})')|join('\n    , ') }} ])
+    S.pgPostOne jwt "{{table.name}}_delete" result D.int (E.object [ {{list_fmt(keys, '( "{0.name}", E.{0.elm_type_func} a{0.elm_pascal})')|join('\n    , ') }} ])
 
 {-|
-encode a {{table|pascalcase}} record for use in a {{table}}_create and {{table}}_update sql function.
+encode a {{model}} record for use in a {{table.name}}_create and {{table.name}}_update sql function.
 -}
-encode{{table|pascalcase}}View : {{table|pascalcase}} -> E.Value
-encode{{table|pascalcase}}View r1 =
+encode{{model}}View : {{model}} -> E.Value
+encode{{model}}View r1 =
     E.object
         [ {{ list_fmt(fields, '("{0.name}_arg", E.{0.elm_type_func} r1.{0.elm_name} )')|join('\n        , ') }}
         ]
 
 
-decode{{table|pascalcase}}View : Decoder {{table|pascalcase}}
-decode{{table|pascalcase}}View =
-    D.succeed {{table|pascalcase}}
+decode{{model}}View : Decoder {{model}}
+decode{{model}}View =
+    D.succeed {{model}}
         {{ list_fmt(fields, '|> required "{0.name}" D.{0.elm_type_func}')|join('\n        ') }}

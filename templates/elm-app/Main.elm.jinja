@@ -1,0 +1,51 @@
+module Main exposing (main)
+
+
+import App.Route as Route
+import App.Types as App exposing (AppModel(..), AppMsg(..))
+import App.Update as App
+import App.View as App
+import Browser exposing (Document, UrlRequest(..))
+import Browser.Navigation as Nav
+import Return
+import Shared exposing (Config)
+import Time
+import Url exposing (Url)
+
+-- Main Function Entry
+
+
+main : Program Int AppModel AppMsg
+main =
+    Browser.application
+        { init = init
+        , update = App.update
+        , view = viewMain
+        , subscriptions = \_ -> Sub.none
+        , onUrlRequest = ClickLink
+        , onUrlChange = ChangeUrl
+        }
+
+init : Int -> Url -> Nav.Key -> ( AppModel, Cmd AppMsg )
+init currentTime url key =
+    let
+        cfg =
+            createConfig currentTime key
+    in
+    App.navigateTo cfg (Route.fromUrl url)
+        |> Return.mapBoth ActiveMsg (\page1 -> AppActive (App.default cfg page1))
+
+
+viewMain : AppModel -> Document AppMsg
+viewMain state =
+    { title = "{{app.name}}"
+    , body = [ App.view state ]
+    }
+
+
+createConfig : Int -> Nav.Key -> Config
+createConfig currentTime key =
+    { date = Time.millisToPosix currentTime
+    , key = key
+    , jwt = Shared.defaultJwt
+    }

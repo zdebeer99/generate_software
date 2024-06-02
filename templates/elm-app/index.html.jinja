@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{app.name}}</title>
+    <link rel="shortcut icon" href="/{{app.baseUrl}}/img/favplan.ico">
+    <link rel="stylesheet" href="/{{app.baseUrl}}/css/fundamental-styles.css">
+    <link rel="stylesheet" href="/{{app.baseUrl}}/css/ui-fiori.css">
+    <!-- <script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script> -->
+    <script src="/{{app.baseUrl}}/js/{{app.baseUrl}}v{{app.version}}.js"></script>
+</head>
+
+<body style="margin:0 !important">
+    <script>
+        var settings = { flags: Date.now() };
+        var app = Elm.Main.init(settings);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,79 @@
+module App.Update exposing (navigateTo, update)
+
+
+import App.Route as Route exposing (Route)
+import App.Types exposing (AppModel(..), AppMsg(..), Msg(..), Page(..))
+import Browser exposing (UrlRequest(..))
+import Browser.Navigation as Nav
+import Url
+import Return 
+import Shared exposing (Config)
+{%-for name in names%}
+import Page.{{name}}.Update as {{name}}
+{%-endfor%}
+
+
+--# Update
+
+update : AppMsg -> AppModel -> ( AppModel, Cmd AppMsg )
+update msg model =
+    case ( model, msg ) of
+        ( AppLoading, _ ) ->
+            ( AppLoading, Cmd.none )
+
+        ( AppError model_, ResetAppState ) ->
+            ( AppError model_, Cmd.none )
+
+        ( AppActive model_, ActiveMsg msg_ ) ->
+            let
+                ( m, c ) =
+                    updatePage model_.config msg_ model_.page
+            in
+            ( AppActive { model_ | page = m }, Cmd.map ActiveMsg c )
+
+        ( AppActive model_, ClickLink (Internal url) ) ->
+            if String.startsWith Route.appHttpPath url.path then
+                ( model, Nav.pushUrl model_.config.key (Url.toString url) )
+
+            else
+                ( model, Nav.load (Url.toString url) )
+
+        ( _, ClickLink (External urlStr) ) ->
+            ( model, Nav.load urlStr )
+
+        ( AppActive model_, ChangeUrl url ) ->
+            navigateTo model_.config (Route.fromUrl url)
+                |> Return.mapBoth ActiveMsg (\page1 -> AppActive { model_ | page = page1 })
+
+        _ ->
+            ( AppError "Out of context message received.", Cmd.none )
+
+
+
+updatePage : Config -> Msg -> Page -> (Page, Cmd Msg)
+updatePage config msg model =
+    case (msg, model) of
+{%-for name in names%}
+        ({{name}}Update msg_, {{name}}Page page_) ->
+            {{name}}.update config msg_ page_
+            |> Return.mapBoth {{name}}Update  {{name}}Page
+
+{%-endfor%}
+        _ ->
+           ( HomePage, Cmd.none )
+
+
+
+navigateTo : Config -> Route -> (Page, Cmd Msg)
+navigateTo cfg route =
+    case route of
+        Route.HomePage ->
+            (HomePage, Cmd.none)
+
+{%-for name in names%}
+        Route.{{name}} ->
+            {{name}}.init cfg
+            |> Return.mapBoth {{name}}Update  {{name}}Page
+
+{%-endfor%}
+

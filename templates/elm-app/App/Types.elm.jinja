@@ -1,0 +1,58 @@
+module App.Types exposing
+    ( AppModel(..)
+    , AppMsg(..)
+    , Model
+    , Msg(..)
+    , Page(..)
+    , default
+    )
+
+
+import Browser exposing (UrlRequest(..))
+import Shared exposing (Config)
+import Url exposing (Url)
+{%-for name in names%}
+import Page.{{name}}.Types as {{name}}
+{%-endfor%}
+
+--- Application
+
+
+type AppModel
+    = AppLoading
+    | AppError String
+    | AppActive Model
+
+
+
+type alias Model =
+    { page : Page
+    , config : Config
+    }
+
+
+default : Config -> Page -> Model
+default config page =
+    { page = page
+    , config = config
+    }
+
+type AppMsg
+    = ResetAppState -- used on error page to try and reload the application.
+    | ActiveMsg Msg
+    | ChangeUrl Url
+    | ClickLink UrlRequest
+
+
+--- Application
+
+type Msg 
+    = HomeMsg
+    | {{ list_fmt(names, "{0}Update {0}.Msg")|join('\n    | ') }} 
+
+
+type Page
+    = HomePage
+    | {{ list_fmt(names, "{0}Page {0}.Model")|join('\n    | ') }} 
+
+

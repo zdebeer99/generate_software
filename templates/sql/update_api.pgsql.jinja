@@ -1,0 +1,32 @@
+/*
+
+Generated CRUD functions for postgrest see https://postgrest.org/ for detials
+
+{{today}}
+
+To run the file enter into the command line;
+
+psql -U postgres -h localhost -d databasename -f ./sql/api/update.pgsql -q
+
+*/
+
+-- 
+DROP FUNCTION IF EXISTS api.const_page_size();
+CREATE FUNCTION api.const_page_size()
+RETURNS int
+AS $$
+  SELECT 50;
+$$ LANGUAGE SQL STABLE;
+GRANT EXECUTE ON FUNCTION api.const_page_size() TO web_user;
+
+
+
+\echo 'Postgrest CRUD Functions'
+\echo 'https://postgrest.org/en/v8.0/'
+\echo '---'
+
+{% for table in tables %}
+
+\echo 'Table {{table.name}} Postgrest CRUD Functions.'
+\i ./sql/api/{{table.name}}.sql
+{%- endfor %}

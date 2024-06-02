@@ -1,9 +1,9 @@
-module Page.{{table|pascalcase}} exposing (view, update, init, Model, Msg)
+module Page.{{model}} exposing (view, update, init, Model, Msg)
 
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
-import Model.{{table|pascalcase}} as {{table|pascalcase}} exposing ({{table|pascalcase}})
+import Model.{{model}} as {{model}} exposing ({{model}})
 import Postgrest.Client as P
 import Shared.Indicator exposing (Indicator(..), isBusy, isLoading, setBusy, setIndicatorOff, setLoading)
 import UIBootstrap.Buttons as Button
@@ -39,7 +39,7 @@ viewTable model =
         , TableView.tableView [] tableConfig model.data
         ]
 
-tableConfig : TableView.Config {{table|pascalcase}} Msg
+tableConfig : TableView.Config {{model}} Msg
 tableConfig =
     TableView.defaultConfig
         [ {{ list_fmt(fields, '("{0.elm_title}", TableView.cell{0.elm_type} .{0.elm_name} )')|join('\n        , ') }}
@@ -85,7 +85,7 @@ update cfg msg model =
         NoAction ->
             ( model, Cmd.none )
 
-        {{table|pascalcase}}Result (Ok data) ->
+        {{model}}Result (Ok data) ->
             ( setData data model |> setIndicatorOff, Cmd.none )
 
         DialogClose ->
@@ -100,23 +100,23 @@ update cfg msg model =
                     ( model, Cmd.none )
 
         ActionOpenItem item ->
-            ( setEdit{{table|pascalcase}} (createModel item) model, Cmd.none )
+            ( setEdit{{model}} (createModel item) model, Cmd.none )
 
         CreateItem ->
             ( setLoading model, Cmd.none )
 
         DeleteItem itemId ->
-            ( setBusy model, {{table|pascalcase}}.rpcDelete cfg.jwt DeleteItemResult itemId )
+            ( setBusy model, {{model}}.rpcDelete cfg.jwt DeleteItemResult itemId )
 
         CancelItem item ->
             ( setEditDone model, Cmd.none )
 
         UpdateItem item ->
-            ( setBusy model, {{table|pascalcase}}.rpcUpdate cfg.jwt UpdateItemResult item )
+            ( setBusy model, {{model}}.rpcUpdate cfg.jwt UpdateItemResult item )
 
         CreateItemResult (Ok item1) ->
             ( addItem item1 model
-                |> setEdit{{table|pascalcase}} (createModel item1)
+                |> setEdit{{model}} (createModel item1)
                 |> setIndicatorOff
             , Cmd.none
             )
@@ -135,7 +135,7 @@ update cfg msg model =
             , Cmd.none
             )
 
-        {{table|pascalcase}}Result (Err err1) ->
+        {{model}}Result (Err err1) ->
             networkE "Load Failed" err1 model
 
         CreateItemResult (Err err1) ->
@@ -151,7 +151,7 @@ update cfg msg model =
 init : Config -> ( Model, Cmd Msg )
 init cfg =
     ( default |> setLoading
-    , {{table|pascalcase}}.rpcList cfg.jwt {{table|pascalcase}}Result 0
+    , {{model}}.rpcList cfg.jwt {{model}}Result 0
     )
 
 
@@ -162,13 +162,13 @@ updateEdit : Config -> MsgEdit -> ModelEdit -> Model -> ( Model, Cmd Msg )
 updateEdit cfg msg editModel model =
     case updateEditForm msg editModel of
         Active model_ ->
-            ( setEdit{{table|pascalcase}} (Active model_) model, Cmd.none )
+            ( setEdit{{model}} (Active model_) model, Cmd.none )
 
         Cancelled ->
             ( setEditDone model, Cmd.none )
 
         Confirmed model_ ->
-            ( setEditDone model, {{table|pascalcase}}.rpcUpdate cfg.jwt UpdateItemResult model_ )
+            ( setEditDone model, {{model}}.rpcUpdate cfg.jwt UpdateItemResult model_ )
 
 
 
@@ -189,9 +189,9 @@ notificationE title1 message1 model =
     { model | dialog = DialogNotification (Notification.notification title1 message1) }
 
 
-setEdit{{table|pascalcase}}F : Model -> ModelEdit -> Model
-setEdit{{table|pascalcase}}F model item1 =
-    setEdit{{table|pascalcase}} item1 model
+setEdit{{model}}F : Model -> ModelEdit -> Model
+setEdit{{model}}F model item1 =
+    setEdit{{model}} item1 model
 
  
 
@@ -200,21 +200,21 @@ setEdit{{table|pascalcase}}F model item1 =
 
 type Msg
     = NoAction
-    | {{table|pascalcase}}Result (Result P.Error (List {{table|pascalcase}}))
+    | {{model}}Result (Result P.Error (List {{model}}))
     | DialogClose
     | MsgEdit MsgEdit
     | CreateItem
     | DeleteItem Int
-    | CancelItem {{table|pascalcase}}
-    | UpdateItem {{table|pascalcase}}
-    | CreateItemResult (Result P.Error {{table|pascalcase}})
+    | CancelItem {{model}}
+    | UpdateItem {{model}}
+    | CreateItemResult (Result P.Error {{model}})
     | DeleteItemResult (Result P.Error Int)
-    | UpdateItemResult (Result P.Error {{table|pascalcase}})
-    | ActionOpenItem {{table|pascalcase}}
+    | UpdateItemResult (Result P.Error {{model}})
+    | ActionOpenItem {{model}}
 
 
 type alias Model =
-    { data : List {{table|pascalcase}}
+    { data : List {{model}}
     , dialog : Dialog
     , edit : Maybe ModelEdit
     , indicator : Indicator
@@ -239,8 +239,8 @@ type Dialog
 --## Model Properties
 
 
-setEdit{{table|pascalcase}} : ModelEdit -> Model -> Model
-setEdit{{table|pascalcase}} item1 model =
+setEdit{{model}} : ModelEdit -> Model -> Model
+setEdit{{model}} item1 model =
     { model | edit = Just item1 }
 
 
@@ -254,17 +254,17 @@ closeDialog model =
     { model | dialog = DialogNone }
 
 
-setData : List {{table|pascalcase}} -> Model -> Model
+setData : List {{model}} -> Model -> Model
 setData data1 model =
     { model | data = data1 }
 
 
-addItem : {{table|pascalcase}} -> Model -> Model
+addItem : {{model}} -> Model -> Model
 addItem {{table|camelcase}}View model =
     { model | data = {{table|camelcase}}View :: model.data }
 
 
-updateItem : {{table|pascalcase}} -> Model -> Model
+updateItem : {{model}} -> Model -> Model
 updateItem {{table|camelcase}}View model =
     { model
         | data =
@@ -338,7 +338,7 @@ updateEditForm_ msg model =
             Cancelled
 
         Confirm ->
-             Confirmed (get{{table|pascalcase}} model_)
+             Confirmed (get{{model}} model_)
 
         {% for field in no_keys%}
         Update{{field.elm_pascal}} msg_ ->
@@ -350,7 +350,7 @@ updateEditForm_ msg model =
 
 type ModelEdit
     = Active ModelEditForm
-    | Confirmed {{table|pascalcase}}
+    | Confirmed {{model}}
     | Cancelled
 
 
@@ -366,18 +366,18 @@ type MsgEdit
     | {{list_fmt(no_keys, 'Update{0.elm_pascal} Edit.Msg')|join('\n    | ') }}
 
 
-get{{table|pascalcase}} : ModelEditForm -> {{table|pascalcase}}
-get{{table|pascalcase}} viewModel =
+get{{model}} : ModelEditForm -> {{model}}
+get{{model}} viewModel =
     { {{list_fmt(keys, '{0.elm_name} = viewModel.{0.elm_name}')|join('\n        , ') }}
     , {{list_fmt(no_keys, '{0.elm_name} = Edit.getValue viewModel.{0.elm_name}')|join('\n        , ') }}
     }    
 
 
-create{{table|pascalcase}} : ModelEdit -> Maybe {{table|pascalcase}}
-create{{table|pascalcase}} model =
+create{{model}} : ModelEdit -> Maybe {{model}}
+create{{model}} model =
     case model of
         Active model_ ->
-            Just (get{{table|pascalcase}} model_)
+            Just (get{{model}} model_)
 
         Confirmed model_ ->
             Just model_
@@ -386,7 +386,7 @@ create{{table|pascalcase}} model =
             Nothing
 
 
-createModel : {{table|pascalcase}} -> ModelEdit
+createModel : {{model}} -> ModelEdit
 createModel model =
     Active
         { {{list_fmt(keys, '{0.elm_name} = model.{0.elm_name}')|join('\n        , ') }}

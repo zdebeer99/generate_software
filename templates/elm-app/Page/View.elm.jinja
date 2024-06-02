@@ -1,0 +1,103 @@
+{#
+This template generates the Types.elm, Update.elm and View.elm in one file.
+#}
+module Page.{{table|pascalcase}}.View exposing (view)
+
+import Html exposing (Html, div, span, text)
+import Html.Attributes exposing (class, style)
+import Html.Events exposing (onClick)
+import Shared exposing (Indicator(..), isBusy, isLoading)
+import UIBootstrtap.Buttons as Button
+import UIBootstrtap.Edit as Edit
+import UIBootstrtap.Notification as Notification
+import UIBootstrtap.TableView as TableView
+import Util.Http exposing (httpErrorToText)
+import Model.{{table|pascalcase}} as {{table|pascalcase}} exposing ({{table|pascalcase}})
+import Page.{{table|pascalcase}}.Types exposing (EditAction(..), Model, ModelEdit(..), Msg(..), MsgEdit(..), ModelEditForm)
+
+--# View Table
+
+
+viewTable : Model -> Html Msg
+viewTable model =
+    div []
+        [ text "{{table|titlecase}}"
+        , Button.btn CreateItem "add"
+        , TableView.tableView [] tableConfig model.data
+        ]
+
+tableConfig : TableView.Config {{table|pascalcase}} Msg
+tableConfig =
+    TableView.defaultConfig
+        [ {{ list_fmt(fields, '("{0.elm_title}", TableView.cell{0.elm_type} .{0.elm_name} )')|join('\n        , ') }}
+        ]
+        |> TableView.setRowAttributes (\rowData -> [ onClick (ActionOpenItem rowData), style "cursor" "pointer" ])
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewBusy model
+        , viewLoading model
+            (case model.edit of
+                NotEditing ->
+                    viewTable model
+
+                EditNewItem editItem ->
+                    viewEdit editItem |> Html.map MsgEdit
+
+                EditUpdateItem editItem ->
+                    viewEdit editItem |> Html.map MsgEdit
+            )
+        , Notification.view model.dialog
+        ]
+
+viewLoading : Model -> Html Msg -> Html Msg
+viewLoading model view1 =
+    if isLoading model then
+        div [] [ text "Loading.." ]
+
+    else
+        view1
+
+
+viewBusy : Model -> Html Msg
+viewBusy model =
+    if isBusy model then
+        span [] [ text "Busy.." ]
+
+    else
+        text ""
+
+
+--# View Edit
+
+viewEdit : ModelEdit -> Html MsgEdit
+viewEdit model =
+    case model of
+        Active model_ ->
+            viewEditForm model_
+
+        Confirmed model_ ->
+            div [] [ text "Updating..." ]
+
+        Cancelled ->
+            div [] [ text "Change cancelled." ]
+
+
+viewEditForm : ModelEditForm -> Html MsgEdit
+viewEditForm model =
+    div []
+        [ text "{{table|titlecase}}"
+        ,  div [ class "fd-form__item", style "max-width" "600px", style "margin" "auto" ]
+            [{%-for key in keys%}
+            {{ "" if loop.first else ", " }} Edit.readonly "{{key.elm_title}}" {{elm_to_string(key.elm_type, "model."+key.elm_name)}}
+            {%-endfor%}
+            {%-for field in no_keys%}
+            {{ ", " if keys|length > 0 else ""}} Edit.input Update{{field.elm_pascal}} "{{field.elm_title}}" [] model.{{field.elm_name}}
+            {%-endfor%}
+            , Button.btn Cancel "Cancel"
+            , Button.btnPrimary Confirm "Update"
+            ]
+        ]
+
+

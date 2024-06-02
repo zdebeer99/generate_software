@@ -1,0 +1,43 @@
+module App.Route exposing (Route(..), defaultUrl, fromUrl, parser, appHttpPath)
+
+{-| Generate code {{today}}-}
+
+import Url as Url exposing (Url)
+import Url.Parser as UrlParser exposing ((</>), (<?>))
+import Url.Builder as Url exposing (absolute)
+
+appHttpPath : String
+appHttpPath =
+    absolute [ "{{app.baseUrl}}" ] []
+
+type Route
+    = HomePage
+    | {{ names | join('\n    | ') }}
+
+
+parser : UrlParser.Parser (Route -> a) a
+parser =
+    UrlParser.oneOf
+        {%-for name in names %}        
+        {{ "[ " if loop.first else ", " }} UrlParser.map {{name}} (UrlParser.s "{{name|lowercase}}" )
+        {%-endfor%}                   
+        ]
+
+
+{-| <http://123.123.123.1/login?backurl=wwww>
+-}
+fromUrl : Url -> Route
+fromUrl url =
+    UrlParser.parse parser { url | path = Maybe.withDefault "" url.fragment }
+        |> Maybe.withDefault HomePage
+
+
+defaultUrl : Url
+defaultUrl =
+    { protocol = Url.Http
+    , host = ""
+    , port_ = Nothing
+    , path = "/"
+    , query = Nothing
+    , fragment = Nothing
+    }

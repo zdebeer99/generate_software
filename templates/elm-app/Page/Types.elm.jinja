@@ -1,0 +1,175 @@
+{#
+This template generates the Types.elm, Update.elm and View.elm in one file.
+#}
+module Page.{{table|pascalcase}}.Types exposing 
+    ( EditAction(..)
+    , Model
+    , ModelEdit(..)
+    , ModelEditForm
+    , Msg(..)
+    , MsgEdit(..)
+    , addItem
+    , closeDialog
+    , create{{table|pascalcase}}
+    , createModel
+    , default
+    , deleteItem
+    , get{{table|pascalcase}}
+    , setData
+    , setEdit{{table|pascalcase}}
+    , setEditDone
+    , setNew{{table|pascalcase}}
+    , updateItem
+    )
+
+import Model.{{table|pascalcase}} as {{table|pascalcase}} exposing ({{table|pascalcase}})
+import Postgrest.Client as P
+import Shared exposing (Indicator(..))
+import UIBootstrtap.Edit as Edit
+import UIBootstrtap.Notification as Notification
+
+--# Model
+
+
+type Msg
+    = NoAction
+    | {{table|pascalcase}}Result (Result P.Error (List {{table|pascalcase}}))
+    | DialogClose
+    | MsgEdit MsgEdit
+    | CreateItem
+    | DeleteItem {{ list_fmt(keys, '{0.elm_type}')|join(' ') }}
+    | CancelItem {{table|pascalcase}}
+    | UpdateItem {{table|pascalcase}}
+    | CreateItemResult (Result P.Error {{table|pascalcase}})
+    | DeleteItemResult (Result P.Error ({{list_fmt(keys, '{0.elm_type}')|join(', ') }}))
+    | UpdateItemResult (Result P.Error {{table|pascalcase}})
+    | ActionOpenItem {{table|pascalcase}}
+
+
+type alias Model =
+    { data : List {{table|pascalcase}}
+    , dialog : Notification.Model Msg
+    , edit : EditAction
+    , indicator : Indicator
+    }
+
+
+type EditAction
+    = NotEditing
+    | EditNewItem ModelEdit
+    | EditUpdateItem ModelEdit
+
+
+default : Model
+default =
+    { data = []
+    , dialog = Notification.default
+    , edit = NotEditing
+    , indicator = Loading
+    }
+
+--## Model Properties
+
+
+setEdit{{table|pascalcase}} : ModelEdit -> Model -> Model
+setEdit{{table|pascalcase}} item1 model =
+    { model | edit = EditUpdateItem item1 }
+
+
+setNew{{table|pascalcase}} : ModelEdit -> Model -> Model
+setNew{{table|pascalcase}} item1 model =
+    { model | edit = EditNewItem item1 }
+
+
+setEditDone : Model -> Model
+setEditDone model =
+    { model | edit = NotEditing }
+
+
+closeDialog : Model -> Model
+closeDialog model =
+    { model | dialog = Notification.default }
+
+
+setData : List {{table|pascalcase}} -> Model -> Model
+setData data1 model =
+    { model | data = data1 }
+
+
+addItem : {{table|pascalcase}} -> Model -> Model
+addItem {{table|camelcase}}View model =
+    { model | data = {{table|camelcase}}View :: model.data }
+
+
+updateItem : {{table|pascalcase}} -> Model -> Model
+updateItem {{table|camelcase}}View model =
+    { model
+        | data =
+            List.map
+                (\a1 ->
+                    if {{table|pascalcase}}.equals a1 {{table|camelcase}}View then
+                        {{table|camelcase}}View
+
+                    else
+                        a1
+                )
+                model.data
+    }
+
+
+deleteItem : {{ list_fmt(keys, '{0.elm_type}')|join(' -> ') }} -> Model -> Model
+deleteItem {{ list_fmt(keys, '{0.elm_name}Id')|join(' ') }} model =
+    { model
+        | data = List.filter
+                (\a1 -> {{ list_fmt(keys, 'a1.{0.elm_name} == {0.elm_name}Id')|join(' && ') }}
+                |> not
+                )
+                model.data
+    }
+
+-- # Model Edit
+
+type ModelEdit
+    = Active ModelEditForm
+    | Confirmed {{table|pascalcase}}
+    | Cancelled
+
+
+type alias ModelEditForm =
+    { {{list_fmt(keys, '{0.elm_name} : {0.elm_type}')|join('\n    , ') }}
+    {{"," if no_keys|length > 0 else ""}} {{list_fmt(no_keys, '{0.elm_name} : Edit.State {0.elm_type}')|join('\n    , ') }}
+    }
+
+
+type MsgEdit
+    = Cancel
+    | Confirm
+    {{"|" if no_keys|length > 0 else ""}} {{list_fmt(no_keys, 'Update{0.elm_pascal} Edit.Msg')|join('\n    | ') }}
+
+
+get{{table|pascalcase}} : ModelEditForm -> {{table|pascalcase}}
+get{{table|pascalcase}} viewModel =
+    { {{list_fmt(keys, '{0.elm_name} = viewModel.{0.elm_name}')|join('\n        , ') }}
+    {{"," if no_keys|length > 0 else ""}} {{list_fmt(no_keys, '{0.elm_name} = Edit.getValue viewModel.{0.elm_name}')|join('\n        , ') }}
+    }
+
+
+create{{table|pascalcase}} : ModelEdit -> Maybe {{table|pascalcase}}
+create{{table|pascalcase}} model =
+    case model of
+        Active model_ ->
+            Just (get{{table|pascalcase}} model_)
+
+        Confirmed model_ ->
+            Just model_
+
+        Cancelled ->
+            Nothing
+
+
+createModel : {{table|pascalcase}} -> ModelEdit
+createModel model =
+    Active
+        { {{list_fmt(keys, '{0.elm_name} = model.{0.elm_name}')|join('\n        , ') }}
+        {{"," if no_keys|length > 0 else ""}} {{list_fmt(no_keys, '{0.elm_name} = Edit.init{0.elm_type} Edit.validateNothing model.{0.elm_name}')|join('\n        , ') }}
+        }

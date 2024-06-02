@@ -1,0 +1,22 @@
+/*
+Code generated.
+
+{{today}}
+
+Table {{table}}
+
+{{table_meta.description}}
+
+*/
+
+-- DROP TABLE IF EXISTS public.{{table}};
+
+/*
+SELECT * FROM {{table}};
+*/
+CREATE TABLE public.{{table}} (
+{%-for field in fields %}
+    {{field.name}} {{pg_table_definition(field)}},
+{%-endfor%}  
+    PRIMARY KEY ({{ list_fmt(keys, "{0.name}")|join(', ') }})
+);

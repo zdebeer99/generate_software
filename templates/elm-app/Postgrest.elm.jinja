@@ -1,0 +1,134 @@
+module Postgrest exposing
+    ( apiUrl
+    , pgPost, pgPostOne, pgGet, pgGetOne, JWT
+    , WebResult, create, decodeOne, delete, encodeMaybe, endpoint, get, getList, jwtFromString, request, update
+    )
+
+{-|
+
+@docs apiUrl
+
+
+# Postgrest
+
+@docs jwt, pgPost, pgPostOne, pgGet, pgGetOne, JWT
+
+File Generated {{today}}
+
+-}
+
+import Json.Decode as D
+import Json.Encode as E
+import Postgrest.Client as P
+
+
+type alias JWT =
+    P.JWT
+
+
+
+apiUrl : List String -> String
+apiUrl stringList =
+    String.join "/" ("pgrest" :: stringList)
+
+
+jwtFromString =
+    P.jwt
+
+
+
+-- jwt =
+--     P.jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIxIiwiZXhwIjoxNjA2MDI2MDcwLCJyb2xlIjoid2ViX3VzZXIifQ.mlRiLlwi1gKgmPE-vw8Jg_W-RynWYBoJy5UdixkBri4"
+
+
+pgGet : P.JWT -> String -> (Result P.Error (List a) -> msg) -> D.Decoder a -> List ( String, P.Value ) -> Cmd msg
+pgGet aJwt aFunctionName aResult aDecoder aArguments =
+    P.get (apiUrl [ "rpc", aFunctionName ]) { params = List.map (\( a1, b1 ) -> P.param a1 (P.value b1)) aArguments, decoder = D.list aDecoder }
+        |> P.toCmd aJwt aResult
+
+
+pgGetOne : P.JWT -> String -> (Result P.Error a -> msg) -> D.Decoder a -> List ( String, P.Value ) -> Cmd msg
+pgGetOne aJwt aFunctionName aResult aDecoder aArguments =
+    P.get (apiUrl [ "rpc", aFunctionName ]) { params = List.map (\( a1, b1 ) -> P.param a1 (P.value b1)) aArguments, decoder = decodeOne aDecoder }
+        |> P.toCmd aJwt aResult
+
+
+pgPost : P.JWT -> String -> (Result P.Error a -> msg) -> D.Decoder a -> E.Value -> Cmd msg
+pgPost aJwt aFunctionName aResult aDecoder aArguments =
+    P.post (apiUrl [ "rpc", aFunctionName ]) { params = [], decoder = aDecoder, body = aArguments }
+        |> P.toCmd aJwt aResult
+
+
+pgPostOne : P.JWT -> String -> (Result P.Error a -> msg) -> D.Decoder a -> E.Value -> Cmd msg
+pgPostOne aJwt aFunctionName aResult aDecoder aArguments =
+    pgPost aJwt aFunctionName aResult (decodeOne aDecoder) aArguments
+
+
+{-| Convert a json array with a single item into a object.
+-}
+decodeOne : D.Decoder a -> D.Decoder a
+decodeOne aDecoder =
+    D.list aDecoder |> D.andThen (List.head >> Maybe.map D.succeed >> Maybe.withDefault (D.fail "Item not found."))
+
+
+{-| Conveniance function for encoding Maybe types
+-}
+encodeMaybe : Maybe a -> (a -> E.Value) -> E.Value
+encodeMaybe aMaybe function =
+    case aMaybe of
+        Just v ->
+            function v
+
+        Nothing ->
+            E.null
+
+
+getList : P.JWT -> P.Endpoint a -> (Result P.Error (List a) -> msg) -> Cmd msg
+getList aJwt endpoint1 result1 =
+    P.getMany endpoint1
+        |> P.setParams [ P.limit 50 ]
+        |> P.toCmd aJwt result1
+
+
+get : P.JWT -> P.Endpoint a -> (Result P.Error a -> msg) -> P.PrimaryKey b -> b -> Cmd msg
+get aJwt endpoint1 result1 primaryKey1 id1 =
+    P.getByPrimaryKey endpoint1 primaryKey1 id1
+        |> P.toCmd aJwt result1
+
+
+update : P.JWT -> P.Endpoint a -> (Result P.Error a -> msg) -> P.PrimaryKey b -> b -> E.Value -> Cmd msg
+update aJwt aEndpoint aResult aPrimaryKey aId aValue =
+    P.patchByPrimaryKey aEndpoint aPrimaryKey aId aValue
+        |> P.toCmd aJwt aResult
+
+
+create : P.JWT -> P.Endpoint a -> (Result P.Error a -> msg) -> E.Value -> Cmd msg
+create aJwt aEndpoint aResult aValue =
+    P.postOne aEndpoint aValue
+        |> P.toCmd aJwt aResult
+
+
+delete : P.JWT -> P.Endpoint b -> (Result P.Error b -> msg) -> P.PrimaryKey b -> b -> Cmd msg
+delete aJwt aEndpoint aResult aPrimaryKey aId =
+    P.deleteByPrimaryKey aEndpoint aPrimaryKey aId
+        |> P.toCmd aJwt aResult
+
+
+
+--# Helpers
+
+
+request : P.JWT -> (Result P.Error a -> msg) -> P.Request a -> Cmd msg
+request aJwt result1 =
+    P.toCmd aJwt result1
+
+
+endpoint : String -> D.Decoder a -> P.Endpoint a
+endpoint obj1 decoder1 =
+    P.endpoint (apiUrl [ obj1 ]) decoder1
+
+
+type alias WebResult a =
+    Result P.Error a
+
+

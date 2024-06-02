@@ -1,0 +1,22 @@
+/*
+Generate update script for the database schema.
+
+{{today}}
+
+psql -U postgres -h localhost -f ./sql/schema/update.pgsql -q
+
+*/
+
+
+\echo 'schema'
+\echo '---'
+
+{% for table in tables | reverse %}
+DROP TABLE IF EXISTS public.{{table.name}};
+{%- endfor %}
+
+{% for table in tables %}
+
+\echo 'Table {{table.name}}.'
+\i ./sql/schema/{{table.name}}.sql
+{%- endfor %}

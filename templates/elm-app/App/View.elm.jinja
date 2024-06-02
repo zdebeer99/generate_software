@@ -1,0 +1,54 @@
+module App.View exposing (view)
+
+
+import App.Types exposing (AppModel(..), AppMsg(..), Model, Msg(..), Page(..))
+import Browser exposing (UrlRequest(..))
+import Html as Html exposing (Html,div,text)
+import Html.Attributes as A
+{%-for name in names%}
+import Page.{{name}}.View as {{name}}
+{%-endfor%}
+
+
+--# View
+
+
+view : AppModel -> Html AppMsg
+view model =
+    case model of
+        AppLoading ->
+            div [] [ text "Application Loading" ]
+
+        AppActive model_ ->
+            div [] [ viewPage model_ |> Html.map ActiveMsg ]
+
+        AppError msg ->
+            div []
+                [ Html.h2 [] [ text "Application Error!" ]
+                , Html.p [] [ text msg ]
+                ]
+
+
+viewPage : Model -> Html Msg
+viewPage model =
+    case model.page of
+        HomePage ->
+            viewHomePage
+
+{%-for name in names%}
+        {{name}}Page page_ ->
+            {{name}}.view page_
+            |> Html.map {{name}}Update
+
+{%-endfor%}
+
+
+viewHomePage : Html Msg
+viewHomePage =
+    div []
+        [ Html.h2 [] [ text "{{app.name}}" ]
+        , Html.p [] [ text "{{app.description}}" ]
+        {%-for name in names%}
+        , div [] [ Html.a [A.href "#{{name|lowercase}}"] [ text "{{name|sentencecase}}" ] ]
+        {%-endfor%}
+        ]
